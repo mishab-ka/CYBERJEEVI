@@ -1,0 +1,76 @@
+import os
+# import socket programming library 
+import json
+import requests
+import socket 
+# import thread module 
+from _thread import *
+import threading 
+old=[]
+
+sess = requests.Session()
+sess.headers.update({'x-sharechat-userid': '70914340'})
+sess.headers.update({'x-sharechat-secret': '143392be13733c298fd7'})
+sess.headers.update({'content-type': 'application/json; charset=UTF-8'})
+sess.headers.update({'user-agent': 'okhttp/3.11.0'})
+
+
+print_lock = threading.Lock() 
+# thread fuction 
+def threaded(c): 
+    while True: 
+        # data received from client 
+        data = c.recv(50) 
+        if data: 
+            data=data.decode('utf8')
+            for i in ['\t','\n']:
+                data=data.replace(i,'')
+            data=data[1:]
+            if data not in old:
+                getName(data)
+                
+            # lock released on exit 
+            print_lock.release() 
+            break
+        # reverse the given string from client  
+        # send back reversed string to client 
+    # connection closed 
+    c.close() 
+
+def Main(): 
+    host = "" 
+    # reverse a port on your computer 
+    # in our case it is 12345 but it 
+    # can be anything 
+    port = 1337
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    s.bind((host, port)) 
+    #print("socket binded to port", port) 
+    # put the socket into listening mode 
+    s.listen(5) 
+    #print("socket is listening") 
+    # a forever loop until client wants to exit 
+    while True: 
+        # establish connection with client 
+        c, addr = s.accept() 
+        # lock acquired by client 
+        print_lock.acquire() 
+        #print('Connected to :', addr[0], ':', addr[1]) 
+        # Start a new thread and return its identifier 
+        start_new_thread(threaded, (c,)) 
+    s.close() 
+
+def getName(id):
+    data={"message":{"t":1,"a":id},"passCode":"6ff00d221b6084106f4e","userId":"54545"}
+    k=sess.post('https://restapi1.sharechat.com/requestType56',json=data)
+    b=json.loads(k.text)
+    try:
+#        os.system('termux-toast '+b['payload']['d']['n'])
+        #os.system('termux-open-url '+b['payload']['d']['pu'])
+        print('Userid : \u001b %-9s \u001b Username : %s\u001b[0m - CYBERJEEVI '%(id,b['payload']['d']['n']))
+        old.append(id)
+    except:
+        pass
+
+if __name__ == '__main__': 
+    Main()
